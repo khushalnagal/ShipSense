@@ -1,6 +1,6 @@
-# Trekly: Delivery Performance Analysis
+# ShipSense : Delivery Performance Analysis
 
-Trekly analyzes delivery performance and financial cost exposure across
+ShipSense analyzes delivery performance and financial cost exposure across
 logistics partners, regions and vehicle types. It is built end-to-end in
 three tools, each doing one job:
 
@@ -21,7 +21,7 @@ actually the right metric to prioritize action on?**
 
 A delayed low-value package and a failed high-value package are not
 equally costly to the business, even if they show up the same way in a
-delay-rate report. Trekly instead estimates the **financial cost
+delay-rate report. ShipSense instead estimates the **financial cost
 exposure** of each lane and compares that ranking against the traditional
 delay-rate ranking.
 
@@ -78,7 +78,7 @@ lanes actually responsible for the highest financial impact.
 ## 6. Project Structure
 
 ```
-Trekly/
+ShipSense/
 ├── excel/
 │   └── quick_pass_notes.md            # Step 1 findings from the raw file
 ├── sql/
@@ -90,7 +90,7 @@ Trekly/
 │   ├── 06_cost_exposure_by_lane.sql   # Cost exposure by lane
 │   └── 07_priority_lanes.sql          # Worst lanes missed by delay-rate-only view
 ├── powerbi/
-│   └── Trekly_DB.pdf                  # Final dashboard export
+│   └── ShipSense_DB.pdf                  # Final dashboard export
 ├── .gitignore
 └── README.md
 ```
