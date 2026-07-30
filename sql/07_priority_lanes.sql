@@ -1,0 +1,44 @@
+-- Saved as a VIEW instead of a one-off query, so:
+--   1. The ranking logic lives in one place in the database (not duplicated in Power BI or re-typed elsewhere)
+--   2. Power BI (or any other tool) can connect to it exactly like a normal table - no inline SQL needed on the BI side
+--   3. It always reflects the current state of `deliveries` on refresh
+
+USE trekly;
+DROP VIEW IF EXISTS priority_lanes;
+
+CREATE VIEW priority_lanes AS
+WITH lane_metrics AS (
+    SELECT delivery_partner, region, vehicle_type,
+        COUNT(*) AS total_deliveries,
+        SUM(CASE WHEN delivery_status = 'delayed' THEN 1 ELSE 0 END) AS delayed_count,
+        SUM(CASE WHEN delivery_status = 'failed' THEN 1 ELSE 0 END) AS failed_count,
+        ROUND( SUM(
+                CASE
+                    WHEN delivery_status = 'delayed' THEN delivery_cost * 0.10
+                    WHEN delivery_status = 'failed' THEN delivery_cost * 1.5
+                    ELSE 0
+                END ), 2 ) AS total_cost_exposure,
+        ROUND( SUM(CASE WHEN delivery_status IN ('delayed', 'failed') THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2 ) AS problem_rate_pct
+    FROM deliveries
+    GROUP BY delivery_partner, region, vehicle_type
+    HAVING COUNT(*) >= 20
+),
+ranked AS (
+    SELECT
+        *,
+        RANK() OVER (ORDER BY total_cost_exposure DESC) AS cost_rank,
+        RANK() OVER (ORDER BY problem_rate_pct DESC) AS problem_rank
+    FROM lane_metrics
+)
+SELECT delivery_partner, region, vehicle_type, total_deliveries, total_cost_exposure, cost_rank, problem_rate_pct, problem_rank,
+    CASE
+        WHEN cost_rank <= 3 THEN 'Immediate Investigation'
+        WHEN cost_rank <= 5 THEN 'High Priority Review'
+        ELSE 'Monitor'
+    END AS recommendation
+FROM ranked
+WHERE cost_rank <= 10 AND problem_rank > 10
+ORDER BY cost_rank;
+
+-- Verify it works like a normal table
+SELECT * FROM priority_lanes;
